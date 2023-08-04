@@ -1,0 +1,55 @@
+version: '3'
+services:
+  db:
+    image: mysql:8.1.0
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'fullcycle-db'
+      MYSQL_USER: 'fullcycle-user'
+      MYSQL_PASSWORD: 'fullcycle-pass'
+      MYSQL_ROOT_PASSWORD: 'fullcycle-root-pass'
+    volumes:
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/1.sql
+      - db_data:/var/lib/mysql
+    networks:
+      - app-network
+      
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+    networks:
+      - app-network
+
+  app:
+    build: ./node
+    ports:
+      - '3000:3000'
+    depends_on:
+      - db
+    networks:
+      - app-network
+    environment:
+      DB_HOST: db
+      DB_USER: fullcycle-user
+      DB_PASSWORD: fullcycle-pass
+      DB_NAME: fullcycle-db
+
+  nginx:
+    build: ./nginx
+    ports:
+      - '80:80'
+    depends_on:
+      - app
+    networks:
+      - app-network
+
+volumes:
+  db_data:
+
+networks:
+  app-network:
+    driver: bridge
+
